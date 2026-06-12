@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def wait_for_db(retries: int = 15, delay: int = 3) -> None:
+    # SQLite é um arquivo local — não precisa aguardar conexão TCP
     if settings.DATABASE_URL.startswith("sqlite"):
         logger.info("SQLite detectado — pulando wait_for_db.")
         return
