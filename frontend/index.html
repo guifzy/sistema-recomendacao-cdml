@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FashionAI — Sistema de Recomendação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0a0a0f;
+      --surface:     #111118;
+      --surface2:    #1a1a24;
+      --border:      #2a2a3a;
+      --accent:      #7c5cfc;
+      --accent2:     #c471ed;
+      --accent-glow: rgba(124, 92, 252, 0.25);
+      --text:        #e8e8f0;
+      --text-muted:  #7070a0;
+      --success:     #3ecf8e;
+      --warning:     #f5a623;
+      --danger:      #ef4444;
+      --gold:        #fbbf24;
+      --radius:      14px;
+      --radius-sm:   8px;
+      --shadow:      0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      -webkit-text-fill-color: white;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s;
+    }
+
+    .status-dot.online { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.training { background: var(--warning); box-shadow: 0 0 6px var(--warning); animation: pulse 1.5s infinite; }
+
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+
+    /* ── Hero ──────────────────────────────────────────────────────────── */
+    .hero {
+      padding: 5rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* ── Search Bar ────────────────────────────────────────────────────── */
+    .search-section {
+      max-width: 700px;
+      margin: 0 auto 3rem;
+      padding: 0 1rem;
+    }
+
+    .search-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .search-card label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Tabs ──────────────────────────────────────────────────────────── */
+    .main-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 160px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .tab-btn:not(.active):hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section header ────────────────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .section-title span {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    /* ── Product Grid ──────────────────────────────────────────────────── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 12px 40px rgba(124,92,252,0.2);
+    }
+
+    .card-image {
+      width: 100%;
+      aspect-ratio: 3/2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-rank {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      color: var(--gold);
+    }
+
+    .card-score-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+    }
+
+    .card-body { padding: 1rem; }
+
+    .card-category {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-brand {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 2px 7px;
+      color: var(--text-muted);
+    }
+
+    .card-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.82rem;
+      margin-top: 0.6rem;
+    }
+
+    .stars {
+      display: flex;
+      gap: 1px;
+    }
+
+    .star { color: var(--gold); font-size: 0.75rem; }
+    .star.empty { color: var(--border); }
+
+    .card-interactions {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* Score bar */
+    .score-bar-wrap {
+      margin-top: 0.75rem;
+    }
+
+    .score-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .score-bar {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── Metrics Panel ─────────────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .weights-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .weights-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    .weight-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .weight-name {
+      min-width: 140px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .weight-bar-wrap { flex: 1; }
+
+    .weight-value {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 45px;
+      text-align: right;
+    }
+
+    /* ── Loading & Empty States ────────────────────────────────────────── */
+    .loading {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* ── Toast ─────────────────────────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 999;
+    }
+
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      box-shadow: var(--shadow);
+      animation: slideIn 0.3s ease;
+      max-width: 320px;
+    }
+
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+    .toast.success { border-color: var(--success); color: var(--success); }
+
+    @keyframes slideIn { from { transform: translateX(100%); opacity:0 } to { transform: translateX(0); opacity:1 } }
+
+    /* ── Breakdown tooltip ─────────────────────────────────────────────── */
+    .breakdown-section {
+      margin-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+      display: none;
+    }
+
+    .product-card:hover .breakdown-section { display: block; }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .hero { padding: 3rem 1.5rem 2rem; }
+      .main-content { padding: 0 1rem 3rem; }
+      .tabs { gap: 2px; }
+      .product-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      FashionAI
+    </div>
+    <div class="status-badge">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Verificando...</span>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Descubra sua moda<br /><span>com inteligência artificial</span></h1>
+  <p>Sistema de recomendação híbrido que combina filtragem colaborativa,
+     análise de conteúdo e tendências para criar sugestões únicas para você.</p>
+</section>
+
+<!-- Search -->
+<div class="search-section">
+  <div class="search-card">
+    <label>ID do Usuário para Recomendações Personalizadas</label>
+    <div class="input-row">
+      <input type="number" id="user-id-input" placeholder="Ex: 42" min="1" />
+      <button class="btn-primary" onclick="loadRecommendations()">Recomendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('recommend')">✦ Recomendações</button>
+    <button class="tab-btn" onclick="switchTab('top-rated')">⭐ Melhor Avaliadas</button>
+    <button class="tab-btn" onclick="switchTab('popular')">🔥 Mais Populares</button>
+    <button class="tab-btn" onclick="switchTab('metrics')">📊 Métricas do Sistema</button>
+  </div>
+
+  <!-- Recomendações -->
+  <div class="tab-panel active" id="panel-recommend">
+    <div class="section-header">
+      <div class="section-title">Recomendações Personalizadas <span id="rec-count"></span></div>
+      <div class="filter-row" id="rec-filters">
+        <button class="filter-btn active" onclick="setRecFilter(this,'')">Todos</button>
+        <button class="filter-btn" onclick="setRecFilter(this,&quot;Men's Fashion&quot;)">Masculino</button>
+        <button class="filter-btn" onclick="setRecFilter(this,&quot;Women's Fashion&quot;)">Feminino</button>
+        <button class="filter-btn" onclick="setRecFilter(this,&quot;Kids' Fashion&quot;)">Kids</button>
+      </div>
+    </div>
+    <div id="recommend-grid" class="product-grid">
+      <div class="empty-state">
+        <div class="empty-icon">👕</div>
+        <p>Digite um ID de usuário acima e clique em <strong>Recomendar</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Rated -->
+  <div class="tab-panel" id="panel-top-rated">
+    <div class="section-header">
+      <div class="section-title">Melhor Avaliadas <span id="rated-count"></span></div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter(this,'top-rated','')">Todos</button>
+        <button class="filter-btn" onclick="setFilter(this,'top-rated',&quot;Men's Fashion&quot;)">Masculino</button>
+        <button class="filter-btn" onclick="setFilter(this,'top-rated',&quot;Women's Fashion&quot;)">Feminino</button>
+        <button class="filter-btn" onclick="setFilter(this,'top-rated',&quot;Kids' Fashion&quot;)">Kids</button>
+      </div>
+    </div>
+    <div id="top-rated-grid" class="product-grid">
+      <div class="loading"><div class="spinner"></div><p>Carregando...</p></div>
+    </div>
+  </div>
+
+  <!-- Popular -->
+  <div class="tab-panel" id="panel-popular">
+    <div class="section-header">
+      <div class="section-title">Mais Populares <span id="pop-count"></span></div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter(this,'popular','')">Todos</button>
+        <button class="filter-btn" onclick="setFilter(this,'popular',&quot;Men's Fashion&quot;)">Masculino</button>
+        <button class="filter-btn" onclick="setFilter(this,'popular',&quot;Women's Fashion&quot;)">Feminino</button>
+        <button class="filter-btn" onclick="setFilter(this,'popular',&quot;Kids' Fashion&quot;)">Kids</button>
+      </div>
+    </div>
+    <div id="popular-grid" class="product-grid">
+      <div class="loading"><div class="spinner"></div><p>Carregando...</p></div>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="tab-panel" id="panel-metrics">
+    <div class="section-header">
+      <div class="section-title">Métricas do Sistema Híbrido</div>
+      <div class="input-row" style="gap:8px">
+        <input type="number" id="metrics-user-id" placeholder="ID do usuário" min="1" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;padding:6px 12px;outline:none;width:160px" />
+        <button class="btn-primary" onclick="loadMetrics()">Analisar</button>
+      </div>
+    </div>
+    <div id="metrics-content">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <p>Digite um ID de usuário para ver as métricas do sistema</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+  const API = '/api/v1';
+  let allRecommendations = [];
+  let currentRecCategory = '';
+
+  // ── Utilitários ──────────────────────────────────────────────────────────────
+
+  function toast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function productEmoji(name) {
+    const m = { dress:'👗', shoes:'👟', jeans:'👖', 'T-shirt':'👕', sweater:'🧥' };
+    return m[name] || '🛍️';
+  }
+
+  function categoryColor(cat) {
+    const m = {
+      "Men's Fashion":   'linear-gradient(135deg,#1a1a2e,#16213e)',
+      "Women's Fashion": 'linear-gradient(135deg,#2d1b3d,#1a0a2e)',
+      "Kids' Fashion":   'linear-gradient(135deg,#0d2137,#091e30)',
+    };
+    return m[cat] || 'linear-gradient(135deg,#111118,#1a1a24)';
+  }
+
+  function starsHTML(rating) {
+    const full = Math.round(rating);
+    let h = '';
+    for (let i = 1; i <= 5; i++)
+      h += `<span class="star ${i <= full ? '' : 'empty'}">★</span>`;
+    return `<div class="stars">${h}</div>`;
+  }
+
+  // ── Status ───────────────────────────────────────────────────────────────────
+
+  async function checkStatus() {
+    try {
+      const r = await fetch('/health');
+      const d = await r.json();
+      const dot  = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (d.collaborative_trained && d.content_trained) {
+        dot.className  = 'status-dot online';
+        text.textContent = 'Modelos prontos';
+      } else {
+        dot.className  = 'status-dot training';
+        text.textContent = 'Treinando modelos...';
+        setTimeout(checkStatus, 5000);
+      }
+    } catch {
+      document.getElementById('status-dot').className = 'status-dot';
+      document.getElementById('status-text').textContent = 'Offline';
+    }
+  }
+
+  // ── Renderização de cards ─────────────────────────────────────────────────────
+
+  function renderCard(item, rank, showScore = true, showBreakdown = false) {
+    const score = typeof item.score === 'number' ? item.score : 0;
+    const pct   = Math.round(score * 100);
+
+    const breakdownHTML = item.score_breakdown && showBreakdown
+      ? `<div class="breakdown-section">
+          ${Object.entries(item.score_breakdown).map(([k,v]) =>
+            `<div class="breakdown-row"><span>${k.replace('_',' ')}</span><span>${typeof v === 'number' ? (v * 100).toFixed(1)+'%' : v}</span></div>`
+          ).join('')}
+        </div>`
+      : '';
+
+    return `
+      <div class="product-card">
+        <div class="card-image" style="background:${categoryColor(item.category)}">
+          ${productEmoji(item.product_name)}
+          ${rank <= 10 ? `<div class="card-rank">#${rank}</div>` : ''}
+          ${showScore ? `<div class="card-score-badge">${pct}%</div>` : ''}
+        </div>
+        <div class="card-body">
+          <div class="card-category">${item.category}</div>
+          <div class="card-name">${item.product_name}</div>
+          <div class="card-brand">${item.brand}</div>
+          <div class="card-meta">
+            <div class="card-price">R$ ${item.price.toFixed(2)}</div>
+            <div class="card-tags">
+              <span class="tag">${item.color}</span>
+              <span class="tag">${item.size}</span>
+            </div>
+          </div>
+          <div class="card-rating">
+            ${starsHTML(item.avg_rating)}
+            <span style="color:var(--text-muted);font-size:0.75rem">${item.avg_rating.toFixed(1)}</span>
+          </div>
+          <div class="card-interactions">${item.interaction_count.toLocaleString('pt-BR')} interações</div>
+          ${showScore ? `
+            <div class="score-bar-wrap">
+              <div class="score-bar-label">
+                <span>Score de recomendação</span>
+                <span>${pct}%</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-bar-fill" style="width:${pct}%"></div>
+              </div>
+            </div>
+          ` : ''}
+          ${breakdownHTML}
+        </div>
+      </div>`;
+  }
+
+  function renderGrid(containerId, items, showScore = true, countId = null) {
+    const el = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>Nenhum resultado encontrado.</p></div>`;
+      return;
+    }
+    el.innerHTML = items.map((item, i) => renderCard(item, i + 1, showScore, true)).join('');
+    if (countId) document.getElementById(countId).textContent = `(${items.length})`;
+  }
+
+  // ── Recomendações ────────────────────────────────────────────────────────────
+
+  async function loadRecommendations() {
+    const uid = document.getElementById('user-id-input').value.trim();
+    if (!uid) { toast('Por favor, insira um ID de usuário.', 'error'); return; }
+
+    const grid = document.getElementById('recommend-grid');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Gerando recomendações...</p></div>';
+    switchTab('recommend');
+
+    try {
+      const r = await fetch(`${API}/recommend/${uid}?top_n=20`);
+      if (r.status === 404) { toast('Usuário não encontrado.', 'error'); grid.innerHTML = `<div class="empty-state"><div class="empty-icon">👤</div><p>Usuário #${uid} não encontrado.</p></div>`; return; }
+      const d = await r.json();
+      allRecommendations = d.items;
+      filterAndRender();
+      toast(`${d.items.length} recomendações geradas para o usuário #${uid}!`, 'success');
+    } catch (e) {
+      toast('Erro ao buscar recomendações.', 'error');
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Erro de conexão com o servidor.</p></div>`;
+    }
+  }
+
+  function filterAndRender() {
+    const filtered = currentRecCategory
+      ? allRecommendations.filter(i => i.category === currentRecCategory)
+      : allRecommendations;
+    renderGrid('recommend-grid', filtered, true, 'rec-count');
+  }
+
+  function setRecFilter(btn, category) {
+    currentRecCategory = category;
+    document.querySelectorAll('#rec-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterAndRender();
+  }
+
+  // ── Top Rated / Popular ──────────────────────────────────────────────────────
+
+  let topRatedFilters  = { current: '' };
+  let popularFilters   = { current: '' };
+
+  async function loadTopRated(category = '') {
+    const grid = document.getElementById('top-rated-grid');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando...</p></div>';
+    const url = `${API}/top-rated?top_n=20${category ? `&category=${encodeURIComponent(category)}` : ''}`;
+    try {
+      const r = await fetch(url);
+      const d = await r.json();
+      renderGrid('top-rated-grid', d.items, true, 'rated-count');
+    } catch { toast('Erro ao buscar dados.', 'error'); }
+  }
+
+  async function loadPopular(category = '') {
+    const grid = document.getElementById('popular-grid');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando...</p></div>';
+    const url = `${API}/popular?top_n=20${category ? `&category=${encodeURIComponent(category)}` : ''}`;
+    try {
+      const r = await fetch(url);
+      const d = await r.json();
+      renderGrid('popular-grid', d.items, true, 'pop-count');
+    } catch { toast('Erro ao buscar dados.', 'error'); }
+  }
+
+  function setFilter(btn, panel, category) {
+    const group = btn.parentElement;
+    group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (panel === 'top-rated') { topRatedFilters.current = category; loadTopRated(category); }
+    else                       { popularFilters.current  = category; loadPopular(category);  }
+  }
+
+  // ── Métricas ─────────────────────────────────────────────────────────────────
+
+  async function loadMetrics() {
+    const uid = document.getElementById('metrics-user-id').value.trim();
+    if (!uid) { toast('Insira um ID de usuário.', 'error'); return; }
+
+    const el = document.getElementById('metrics-content');
+    el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Calculando métricas...</p></div>';
+
+    try {
+      const r = await fetch(`${API}/hybrid-score/${uid}`);
+      if (r.status === 404) { toast('Usuário não encontrado.', 'error'); return; }
+      const d = await r.json();
+      renderMetrics(d);
+    } catch { toast('Erro ao buscar métricas.', 'error'); }
+  }
+
+  function renderMetrics(d) {
+    const weights = d.weights_used || {};
+    const weightColors = ['#7c5cfc','#c471ed','#3ecf8e','#fbbf24','#f97316','#ef4444'];
+    const weightLabels = {
+      collaborative:'Colaborativa', content:'Conteúdo',
+      popularity:'Popularidade', rating:'Avaliação',
+      brand:'Marca', size:'Tamanho',
+    };
+
+    const topRecHTML = d.top_recommendation
+      ? `<div style="margin-top:1.5rem">
+          <div class="weights-title">Top Recomendação</div>
+          <div class="product-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+            ${renderCard(d.top_recommendation, 1, true, false)}
+          </div>
+        </div>`
+      : '';
+
+    document.getElementById('metrics-content').innerHTML = `
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value">${d.total_interactions.toLocaleString('pt-BR')}</div>
+          <div class="metric-label">Interações</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${(d.coverage * 100).toFixed(1)}%</div>
+          <div class="metric-label">Cobertura do catálogo</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${d.avg_rating_given.toFixed(2)}</div>
+          <div class="metric-label">Rating médio dado</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${d.model_rmse ? d.model_rmse.toFixed(3) : '—'}</div>
+          <div class="metric-label">RMSE (SVD)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${(d.diversity_score * 100).toFixed(0)}%</div>
+          <div class="metric-label">Diversidade</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${(d.novelty_score * 100).toFixed(0)}%</div>
+          <div class="metric-label">Novidade</div>
+        </div>
+      </div>
+      <div class="weights-section">
+        <div class="weights-title">Pesos do Sistema Híbrido</div>
+        ${Object.entries(weights).map(([k,v],i) => `
+          <div class="weight-item">
+            <div class="weight-name">${weightLabels[k] || k}</div>
+            <div class="weight-bar-wrap">
+              <div class="score-bar">
+                <div class="score-bar-fill" style="width:${v*100}%;background:${weightColors[i%weightColors.length]}"></div>
+              </div>
+            </div>
+            <div class="weight-value">${(v*100).toFixed(0)}%</div>
+          </div>
+        `).join('')}
+      </div>
+      ${topRecHTML}
+    `;
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────────
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => {
+      const panels = ['recommend','top-rated','popular','metrics'];
+      b.classList.toggle('active', panels[i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === `panel-${name}`);
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+
+  checkStatus();
+  loadTopRated();
+  loadPopular();
+</script>
+</body>
+</html>
