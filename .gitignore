@@ -1,1 +1,34 @@
+# Banco SQLite local (gerado em execução local)
+data/fashion.db
+data/*.db
+
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Variáveis de ambiente locais
+.env
+# .env.local é seguro para commitar (só tem paths relativos e pesos default)
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log

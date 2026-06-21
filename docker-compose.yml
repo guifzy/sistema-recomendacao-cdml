@@ -1,0 +1,47 @@
+services:
+  # banco postgres para armazenar produtos, usuários e interações
+  db:
+    image: postgres:16-alpine
+    container_name: fashion_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     fashion
+      POSTGRES_PASSWORD: fashion
+      POSTGRES_DB:       fashion_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fashion -d fashion_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # backend FastAPI que expõe a API REST para recomendações
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fashion_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fashion:fashion@db:5432/fashion_db
+      CSV_PATH:     /app/data/fashion_products_augmented.csv
+      # Pesos do sistema híbrido (opcionalmente sobrescreva aqui)
+      W_COLLABORATIVE: 0.35
+      W_CONTENT:       0.25
+      W_POPULARITY:    0.20
+      W_RATING:        0.10
+      W_BRAND:         0.05
+      W_SIZE:          0.05
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data   # monta data/ para acesso ao CSV augmentado
+
+volumes:
+  postgres_data:
